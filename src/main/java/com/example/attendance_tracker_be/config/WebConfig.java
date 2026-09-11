@@ -1,3 +1,4 @@
+/*
 package com.example.attendance_tracker_be.config;
 
 import org.springframework.context.annotation.Bean;
@@ -17,3 +18,5 @@ public class WebConfig implements WebMvcConfigurer {
                 .allowCredentials(true);
     }
 }
+
+ */
