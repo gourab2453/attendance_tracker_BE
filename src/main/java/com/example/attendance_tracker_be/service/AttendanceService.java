@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 @Service
 public class AttendanceService {
 
-    private static final LocalTime LATE_CUTOFF = LocalTime.of(9, 15); // adjust as needed
+    private static final LocalTime LATE_CUTOFF = LocalTime.of(23, 45); // adjust as needed
     private static final double STANDARD_DAY_HOURS = 8.0;
 
     private final AttendanceRecordRepository attendanceRepository;
@@ -32,18 +32,29 @@ public class AttendanceService {
     public AttendanceRecordResponse clockIn(String userId) {
         LocalDate today = LocalDate.now();
 
-        attendanceRepository.findByUserIdAndDate(userId, today).ifPresent(r -> {
-            throw new IllegalStateException("Already clocked in today");
-        });
+        AttendanceRecord record = attendanceRepository.findByUserIdAndDate(userId, today)
+                .orElseGet(() -> {
+                    AttendanceRecord r = new AttendanceRecord();
+                    r.setUserId(userId);
+                    r.setDate(today);
+                    return r;
+                });
 
-        AttendanceRecord record = new AttendanceRecord();
-        record.setUserId(userId);
-        record.setDate(today);
+        boolean alreadyClockedIn = record.getSessions().stream()
+                .anyMatch(s -> s.getClockOut() == null);
+        if (alreadyClockedIn) {
+            throw new IllegalStateException("Already clocked in — clock out first");
+        }
+
         LocalDateTime now = LocalDateTime.now();
-        record.setClockIn(now);
-        record.setStatus(now.toLocalTime().isAfter(LATE_CUTOFF)
-                ? AttendanceStatus.LATE
-                : AttendanceStatus.PRESENT);
+        record.getSessions().add(new Session(now, null));
+
+        // Status reflects the first clock-in of the day only
+        if (record.getSessions().size() == 1) {
+            record.setStatus(now.toLocalTime().isAfter(LATE_CUTOFF)
+                    ? AttendanceStatus.LATE
+                    : AttendanceStatus.PRESENT);
+        }
 
         AttendanceRecord saved = attendanceRepository.save(record);
         updateUserStatus(userId, UserStatus.WORKING);
@@ -54,11 +65,12 @@ public class AttendanceService {
     public AttendanceRecordResponse clockOut(String userId) {
         AttendanceRecord record = getTodayRecordOrThrow(userId);
 
-        if (record.getClockOut() != null) {
-            throw new IllegalStateException("Already clocked out today");
-        }
+        Session openSession = record.getSessions().stream()
+                .filter(s -> s.getClockOut() == null)
+                .reduce((first, second) -> second) // most recent open session
+                .orElseThrow(() -> new IllegalStateException("Not currently clocked in"));
 
-        record.setClockOut(LocalDateTime.now());
+        openSession.setClockOut(LocalDateTime.now());
         recalculateHours(record);
 
         AttendanceRecord saved = attendanceRepository.save(record);
@@ -75,8 +87,11 @@ public class AttendanceService {
         if (alreadyOnBreak) {
             throw new IllegalStateException("Already on break");
         }
-        if (record.getClockOut() != null) {
-            throw new IllegalStateException("Cannot start break after clocking out");
+
+        boolean currentlyClockedIn = record.getSessions().stream()
+                .anyMatch(s -> s.getClockOut() == null);
+        if (!currentlyClockedIn) {
+            throw new IllegalStateException("Cannot start break while clocked out");
         }
 
         record.getBreaks().add(new BreakEntry(LocalDateTime.now(), null));
@@ -122,16 +137,17 @@ public class AttendanceService {
     }
 
     private void recalculateHours(AttendanceRecord record) {
-        if (record.getClockIn() == null || record.getClockOut() == null) return;
-
-        long totalMinutes = Duration.between(record.getClockIn(), record.getClockOut()).toMinutes();
+        long workedMinutes = record.getSessions().stream()
+                .filter(s -> s.getClockIn() != null && s.getClockOut() != null)
+                .mapToLong(s -> Duration.between(s.getClockIn(), s.getClockOut()).toMinutes())
+                .sum();
 
         long breakMinutes = record.getBreaks().stream()
                 .filter(b -> b.getStart() != null && b.getEnd() != null)
                 .mapToLong(b -> Duration.between(b.getStart(), b.getEnd()).toMinutes())
                 .sum();
 
-        double workedHours = (totalMinutes - breakMinutes) / 60.0;
+        double workedHours = (workedMinutes - breakMinutes) / 60.0;
         record.setTotalHours(Math.round(workedHours * 100.0) / 100.0);
 
         double overtime = Math.max(0, workedHours - STANDARD_DAY_HOURS);
@@ -150,8 +166,7 @@ public class AttendanceService {
         dto.setId(record.getId());
         dto.setUserId(record.getUserId());
         dto.setDate(record.getDate());
-        dto.setClockIn(record.getClockIn());
-        dto.setClockOut(record.getClockOut());
+        dto.setSessions(record.getSessions());
         dto.setBreaks(record.getBreaks());
         dto.setTotalHours(record.getTotalHours());
         dto.setOvertimeHours(record.getOvertimeHours());

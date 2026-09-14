@@ -5,7 +5,6 @@ import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,8 +18,7 @@ public class AttendanceRecord {
     private String userId;
     private LocalDate date;
 
-    private LocalDateTime clockIn;
-    private LocalDateTime clockOut;
+    private List<Session> sessions = new ArrayList<>();
 
     private List<BreakEntry> breaks = new ArrayList<>();
 
@@ -42,11 +40,8 @@ public class AttendanceRecord {
     public LocalDate getDate() { return date; }
     public void setDate(LocalDate date) { this.date = date; }
 
-    public LocalDateTime getClockIn() { return clockIn; }
-    public void setClockIn(LocalDateTime clockIn) { this.clockIn = clockIn; }
-
-    public LocalDateTime getClockOut() { return clockOut; }
-    public void setClockOut(LocalDateTime clockOut) { this.clockOut = clockOut; }
+    public List<Session> getSessions() { return sessions; }
+    public void setSessions(List<Session> sessions) { this.sessions = sessions; }
 
     public List<BreakEntry> getBreaks() { return breaks; }
     public void setBreaks(List<BreakEntry> breaks) { this.breaks = breaks; }
