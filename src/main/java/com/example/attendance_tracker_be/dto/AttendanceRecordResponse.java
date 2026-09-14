@@ -2,9 +2,9 @@ package com.example.attendance_tracker_be.dto;
 
 import com.example.attendance_tracker_be.model.AttendanceStatus;
 import com.example.attendance_tracker_be.model.BreakEntry;
+import com.example.attendance_tracker_be.model.Session;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 
 public class AttendanceRecordResponse {
@@ -12,8 +12,7 @@ public class AttendanceRecordResponse {
     private String id;
     private String userId;
     private LocalDate date;
-    private LocalDateTime clockIn;
-    private LocalDateTime clockOut;
+    private List<Session> sessions;
     private List<BreakEntry> breaks;
     private double totalHours;
     private double overtimeHours;
@@ -32,11 +31,8 @@ public class AttendanceRecordResponse {
     public LocalDate getDate() { return date; }
     public void setDate(LocalDate date) { this.date = date; }
 
-    public LocalDateTime getClockIn() { return clockIn; }
-    public void setClockIn(LocalDateTime clockIn) { this.clockIn = clockIn; }
-
-    public LocalDateTime getClockOut() { return clockOut; }
-    public void setClockOut(LocalDateTime clockOut) { this.clockOut = clockOut; }
+    public List<Session> getSessions() { return sessions; }
+    public void setSessions(List<Session> sessions) { this.sessions = sessions; }
 
     public List<BreakEntry> getBreaks() { return breaks; }
     public void setBreaks(List<BreakEntry> breaks) { this.breaks = breaks; }

@@ -5,6 +5,7 @@ import com.example.attendance_tracker_be.dto.PayPeriodResponse;
 import com.example.attendance_tracker_be.dto.PaycheckPreviewResponse;
 import com.example.attendance_tracker_be.exception.ResourceNotFoundException;
 import com.example.attendance_tracker_be.model.AttendanceRecord;
+import com.example.attendance_tracker_be.model.Session;
 import com.example.attendance_tracker_be.model.User;
 import com.example.attendance_tracker_be.repository.AttendanceRecordRepository;
 import com.example.attendance_tracker_be.repository.UserRepository;
@@ -19,6 +20,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.TemporalAdjusters;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -33,10 +35,16 @@ public class EarningsService {
         User user = getUserOrThrow(userId);
         BigDecimal rate = user.getPayRate().getRegular();
 
-        return attendanceRepository.findByUserIdAndDate(userId, LocalDate.now())
-                .filter(r -> r.getClockIn() != null && r.getClockOut() == null)
-                .map(record -> {
-                    double elapsedHours = Duration.between(record.getClockIn(), LocalDateTime.now())
+        Optional<AttendanceRecord> todayRecord = attendanceRepository.findByUserIdAndDate(userId, LocalDate.now());
+
+        Optional<Session> openSession = todayRecord
+                .flatMap(record -> record.getSessions().stream()
+                        .filter(s -> s.getClockOut() == null)
+                        .reduce((first, second) -> second)); // most recent open session
+
+        return openSession
+                .map(session -> {
+                    double elapsedHours = Duration.between(session.getClockIn(), LocalDateTime.now())
                             .toMinutes() / 60.0;
                     double roundedHours = Math.round(elapsedHours * 100.0) / 100.0;
 
@@ -45,7 +53,7 @@ public class EarningsService {
 
                     return LiveEarningsResponse.builder()
                             .clockedIn(true)
-                            .clockIn(record.getClockIn())
+                            .clockIn(session.getClockIn())
                             .elapsedHours(roundedHours)
                             .ratePerHour(rate)
                             .estimatedEarnings(earnings)
