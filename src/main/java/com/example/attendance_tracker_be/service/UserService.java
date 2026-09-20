@@ -4,9 +4,11 @@ import com.example.attendance_tracker_be.dto.PayRateUpdateRequest;
 import com.example.attendance_tracker_be.dto.UpdateProfileRequest;
 import com.example.attendance_tracker_be.dto.UserProfileResponse;
 import com.example.attendance_tracker_be.dto.UserSummaryResponse;
+import com.example.attendance_tracker_be.exception.InvalidCompanyException;
 import com.example.attendance_tracker_be.exception.ResourceNotFoundException;
 import com.example.attendance_tracker_be.model.PayRate;
 import com.example.attendance_tracker_be.model.User;
+import com.example.attendance_tracker_be.repository.ListedCompanyRepository;
 import com.example.attendance_tracker_be.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -18,6 +20,7 @@ import java.util.List;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final ListedCompanyRepository listedCompanyRepository;
 
     public UserProfileResponse getProfile(String userId) {
         User user = findUserOrThrow(userId);
@@ -26,6 +29,12 @@ public class UserService {
 
     public UserProfileResponse updateOwnProfile(String userId, UpdateProfileRequest request) {
         User user = findUserOrThrow(userId);
+
+        if (request.getCompany() != null &&
+                !listedCompanyRepository.existsByCompanyName(request.getCompany())) {
+            throw new InvalidCompanyException(
+                    "Company '" + request.getCompany() + "' is not a listed company");
+        }
 
         user.setName(request.getName());
         user.setCompany(request.getCompany());
