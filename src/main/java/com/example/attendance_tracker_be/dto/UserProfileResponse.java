@@ -2,6 +2,7 @@ package com.example.attendance_tracker_be.dto;
 
 import com.example.attendance_tracker_be.model.PayRate;
 import com.example.attendance_tracker_be.model.Role;
+import com.example.attendance_tracker_be.model.LeaveBalance;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -25,4 +26,5 @@ public class UserProfileResponse {
     // problem (it's their own pay rate) and keeps this one DTO reusable
     // across both /users/me and /users/{id}.
     private PayRate payRate;
+    private LeaveBalance leaveBalance;
 }

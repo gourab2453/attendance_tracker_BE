@@ -1,5 +1,6 @@
 package com.example.attendance_tracker_be.controller;
 
+import com.example.attendance_tracker_be.dto.LeaveBalanceUpdateRequest;
 import com.example.attendance_tracker_be.dto.PayRateUpdateRequest;
 import com.example.attendance_tracker_be.dto.UpdateProfileRequest;
 import com.example.attendance_tracker_be.dto.UserProfileResponse;
@@ -21,11 +22,6 @@ public class UserController {
 
     private final UserService userService;
 
-    /**
-     * The JWT subject (set in JwtService/JwtAuthFilter) is the user's Mongo id,
-     * so Authentication#getName() gives us the current user's id directly —
-     * no extra DB lookup by email needed here.
-     */
     private String currentUserId(Authentication authentication) {
         return authentication.getName();
     }
@@ -41,6 +37,11 @@ public class UserController {
             @Valid @RequestBody UpdateProfileRequest request
     ) {
         return ResponseEntity.ok(userService.updateOwnProfile(currentUserId(authentication), request));
+    }
+
+    @GetMapping("/me/leave-balance")
+    public ResponseEntity<UserProfileResponse> getMyLeaveBalance(Authentication authentication) {
+        return ResponseEntity.ok(userService.getProfile(currentUserId(authentication)));
     }
 
     @GetMapping
@@ -62,5 +63,14 @@ public class UserController {
             @Valid @RequestBody PayRateUpdateRequest request
     ) {
         return ResponseEntity.ok(userService.updatePayRate(id, request));
+    }
+
+    @PutMapping("/{id}/leave-balance")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<UserProfileResponse> updateLeaveBalance(
+            @PathVariable String id,
+            @Valid @RequestBody LeaveBalanceUpdateRequest request
+    ) {
+        return ResponseEntity.ok(userService.updateLeaveBalance(id, request));
     }
 }

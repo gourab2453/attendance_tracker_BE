@@ -10,6 +10,8 @@ import com.example.attendance_tracker_be.model.PayRate;
 import com.example.attendance_tracker_be.model.User;
 import com.example.attendance_tracker_be.repository.ListedCompanyRepository;
 import com.example.attendance_tracker_be.repository.UserRepository;
+import com.example.attendance_tracker_be.dto.LeaveBalanceUpdateRequest;
+import com.example.attendance_tracker_be.model.LeaveBalance;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -71,6 +73,25 @@ public class UserService {
         return toProfileResponse(user);
     }
 
+    public UserProfileResponse getLeaveBalance(String userId) {
+        User user = findUserOrThrow(userId);
+        return toProfileResponse(user);
+    }
+
+    public UserProfileResponse updateLeaveBalance(String userId, LeaveBalanceUpdateRequest request) {
+        User user = findUserOrThrow(userId);
+
+        LeaveBalance leaveBalance = LeaveBalance.builder()
+                .casualLeave(request.getCasualLeave())
+                .earnedLeave(request.getEarnedLeave())
+                .sickLeave(request.getSickLeave())
+                .build();
+
+        user.setLeaveBalance(leaveBalance);
+        user = userRepository.save(user);
+        return toProfileResponse(user);
+    }
+
     private User findUserOrThrow(String userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found: " + userId));
@@ -86,6 +107,7 @@ public class UserService {
                 .profession(user.getProfession())
                 .location(user.getLocation())
                 .payRate(user.getPayRate())
+                .leaveBalance(user.getLeaveBalance())
                 .build();
     }
 
