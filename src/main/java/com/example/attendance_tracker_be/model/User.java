@@ -42,4 +42,8 @@ public class User {
     @Builder.Default
     private UserStatus status = UserStatus.UNAVAILABLE;
 
+    // alongside payRate
+    @Builder.Default
+    private LeaveBalance leaveBalance = LeaveBalance.builder().build();
+
 }

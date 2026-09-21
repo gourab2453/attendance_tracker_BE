@@ -21,7 +21,7 @@ public class JwtService {
 
     public JwtService(
             @Value("${app.jwt.secret}") String secret,
-            @Value("${app.jwt.access-token-expiry-ms:3600000}") long accessTokenExpiryMs // default 15 min
+            @Value("${app.jwt.access-token-expiry-ms:86400000}") long accessTokenExpiryMs // default 15 min
     ) {
         // Secret must be >= 256 bits for HS256. Set app.jwt.secret via env var, never commit it.
         this.signingKey = Keys.hmacShaKeyFor(secret.getBytes());
