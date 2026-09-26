@@ -8,6 +8,7 @@ import com.example.attendance_tracker_be.exception.AuthException;
 import com.example.attendance_tracker_be.model.RefreshToken;
 import com.example.attendance_tracker_be.model.Role;
 import com.example.attendance_tracker_be.model.User;
+import com.example.attendance_tracker_be.model.UserStatus;
 import com.example.attendance_tracker_be.repository.RefreshTokenRepository;
 import com.example.attendance_tracker_be.repository.UserRepository;
 import com.example.attendance_tracker_be.security.JwtService;
@@ -62,7 +63,18 @@ public class AuthService {
             throw new AuthException("Invalid email or password", HttpStatus.UNAUTHORIZED);
         }
 
+        user.setStatus(UserStatus.ONLINE);
+        user = userRepository.save(user);
+
         return buildAuthResponse(user);
+    }
+
+    public void logout(String userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new AuthException("User not found", HttpStatus.UNAUTHORIZED));
+
+        user.setStatus(UserStatus.UNAVAILABLE);
+        userRepository.save(user);
     }
 
     @Transactional

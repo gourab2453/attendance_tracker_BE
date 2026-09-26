@@ -58,6 +58,7 @@ public class AdminService {
         return EmployeeStatsResponse.builder()
                 .userId(user.getId())
                 .name(user.getName())
+                .status(user.getStatus())
                 .totalHours(round2(totalHours))
                 .overtimeHours(round2(overtimeHours))
                 .presentDays(presentDays)

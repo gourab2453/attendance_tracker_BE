@@ -1,4 +1,5 @@
 package com.example.attendance_tracker_be.dto;
+import com.example.attendance_tracker_be.model.UserStatus;
 
 import lombok.Builder;
 import lombok.Data;
@@ -8,6 +9,7 @@ import lombok.Data;
 public class EmployeeStatsResponse {
     private String userId;
     private String name;
+    private UserStatus status;
     private double totalHours;
     private double overtimeHours;
     private long presentDays;
